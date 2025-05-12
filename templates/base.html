@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Splitwise Clone{% endblock %}</title>
+    <meta name="description" content="SplitTracker - The easiest way to split expenses with friends, family, or roommates">
+    <meta name="theme-color" content="#4f46e5">
+    <title>{% block title %}SplitTracker{% endblock %}</title>
+    <!-- Favicon -->
+    <!-- <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}"> -->
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -15,6 +19,8 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{% static 'css/custom.css' %}" rel="stylesheet">
+    <!-- Fix CSS -->
+    <link href="{% static 'css/fix.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -41,6 +47,18 @@
                             <i class="fas fa-users me-2"></i>Groups
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="actionsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-plus-circle me-2"></i>Actions
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-start">
+                            {% if user_groups and user_groups|length > 0 %}
+                            <li><a class="dropdown-item" href="{% url 'tracker:expense_create' user_groups.0.id %}"><i class="fas fa-receipt me-2"></i>Add Expense</a></li>
+                            <li><a class="dropdown-item" href="{% url 'tracker:settlement_create' user_groups.0.id %}"><i class="fas fa-money-bill-wave me-2"></i>Record Settlement</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{% url 'tracker:group_create' %}"><i class="fas fa-users me-2"></i>Create Group</a></li>
+                        </ul>
+                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
@@ -50,6 +68,17 @@
                             <span class="badge notification-badge">{{ unread_count }}</span>
                             {% endif %}
                         </a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="nav-link">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="dark-mode-toggle">
+                                <label class="form-check-label" for="dark-mode-toggle">
+                                    <i class="fas fa-moon"></i>
+                                    <span class="sr-only">Dark Mode</span>
+                                </label>
+                            </div>
+                        </div>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
@@ -133,6 +162,11 @@
         </div>
     </footer>
 
+    <!-- Back to top button -->
+    <button id="back-to-top" class="btn btn-primary btn-icon position-fixed bottom-0 end-0 m-4" style="z-index: 99; display: none;">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
@@ -142,11 +176,50 @@
     <!-- Custom JS -->
     <script src="{% static 'js/custom.js' %}"></script>
     <script>
-        // Initialize AOS animations
-        AOS.init({
-            duration: 800,
-            once: true
+        // Completely disable AOS animations
+        if (typeof AOS !== 'undefined') {
+            AOS.init({
+                disable: true
+            });
+        }
+        
+        // Remove any loading spinners that might be present
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove any spinners
+            const spinners = document.querySelectorAll('.spinner-border, .loading');
+            spinners.forEach(spinner => {
+                if (spinner && spinner.parentNode) {
+                    spinner.parentNode.removeChild(spinner);
+                }
+            });
+            
+            // Remove any loading overlay
+            const loadingOverlays = document.querySelectorAll('[id*="loader"], [class*="loader"]');
+            loadingOverlays.forEach(overlay => {
+                if (overlay && overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            });
         });
+        
+        // Back to top button
+        const backToTopBtn = document.getElementById('back-to-top');
+        if (backToTopBtn) {
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    backToTopBtn.style.display = 'flex';
+                } else {
+                    backToTopBtn.style.display = 'none';
+                }
+            });
+            
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        }
     </script>
     {% block extra_js %}{% endblock %}
 </body>

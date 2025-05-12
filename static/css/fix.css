@@ -1,0 +1,35 @@
+/* Fix for loading animations and spinners */
+.loading,
+.spinner-border,
+.spinner-grow,
+[class*="loader"],
+[id*="loader"] {
+    display: none !important;
+}
+
+/* Disable animations */
+[data-aos] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Ensure content is visible */
+body, main, .container {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Fix for any potential z-index issues */
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+.modal {
+    z-index: 1050 !important;
+}
+
+/* Ensure all elements are interactive */
+* {
+    pointer-events: auto !important;
+} 

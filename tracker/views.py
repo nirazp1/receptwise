@@ -9,12 +9,13 @@ from .forms import GroupForm, ExpenseForm, ExpenseShareForm, SettlementForm, Com
 # Create your views here.
 
 # Add Transaction View
+@login_required
 def add_transaction(request):
     if request.method == 'POST':
         form = TransactionForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('transaction_list')
+            return redirect('tracker:transaction_list')
     else:
         form = TransactionForm()
     return render(request, 'tracker/add_transaction.html', {'form': form})
@@ -104,7 +105,7 @@ def group_create(request):
             group = form.save()
             GroupMember.objects.create(user=request.user, group=group, role='admin')
             messages.success(request, 'Group created successfully!')
-            return redirect('group_detail', group_id=group.id)
+            return redirect('tracker:group_detail', group_id=group.id)
     else:
         form = GroupForm()
     return render(request, 'tracker/group_form.html', {'form': form})
@@ -131,7 +132,7 @@ def expense_create(request, group_id):
                     )
             
             messages.success(request, 'Expense added successfully!')
-            return redirect('group_detail', group_id=group.id)
+            return redirect('tracker:group_detail', group_id=group.id)
     else:
         form = ExpenseForm(user=request.user)
     return render(request, 'tracker/expense_form.html', {'form': form, 'group': group})
@@ -141,7 +142,7 @@ def expense_detail(request, expense_id):
     expense = get_object_or_404(Expense, id=expense_id)
     if not expense.group or request.user not in expense.group.members.all():
         messages.error(request, 'You do not have permission to view this expense.')
-        return redirect('dashboard')
+        return redirect('tracker:dashboard')
     
     shares = expense.shares.all()
     comments = expense.comments.all().order_by('-created_at')
@@ -153,7 +154,7 @@ def expense_detail(request, expense_id):
             comment.expense = expense
             comment.user = request.user
             comment.save()
-            return redirect('expense_detail', expense_id=expense.id)
+            return redirect('tracker:expense_detail', expense_id=expense.id)
     else:
         comment_form = CommentForm()
     
@@ -186,7 +187,7 @@ def settlement_create(request, group_id):
             )
             
             messages.success(request, 'Settlement request sent successfully!')
-            return redirect('group_detail', group_id=group.id)
+            return redirect('tracker:group_detail', group_id=group.id)
     else:
         form = SettlementForm(user=request.user, group=group)
     return render(request, 'tracker/settlement_form.html', {'form': form, 'group': group})
@@ -208,7 +209,7 @@ def settlement_approve(request, settlement_id):
         )
         
         messages.success(request, 'Settlement approved successfully!')
-    return redirect('group_detail', group_id=settlement.group.id)
+    return redirect('tracker:group_detail', group_id=settlement.group.id)
 
 @login_required
 def notifications(request):
