@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Add Expense - SplitTracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Add New Expense</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <!-- Receipt Preview -->
+                    <div id="receipt-preview"></div>
+                    
+                    <!-- Shares Container for JavaScript -->
+                    <div id="shares-container" class="d-none">
+                        <!-- Share inputs will be populated via JS -->
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Expense
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const splitTypeSelect = document.querySelector('#id_split_type');
+    const amountInput = document.querySelector('#id_amount');
+    const sharesContainer = document.querySelector('#shares-container');
+    
+    function updateShares() {
+        const splitType = splitTypeSelect.value;
+        const amount = parseFloat(amountInput.value) || 0;
+        const members = {{ group.members.count }};
+        
+        if (splitType === 'equal' && amount > 0) {
+            const shareAmount = amount / members;
+            // Update share amounts in the form
+            document.querySelectorAll('.share-amount').forEach(input => {
+                input.value = shareAmount.toFixed(2);
+            });
+        }
+    }
+    
+    if (splitTypeSelect && amountInput) {
+        splitTypeSelect.addEventListener('change', updateShares);
+        amountInput.addEventListener('input', updateShares);
+    }
+    
+    // Receipt preview
+    const receiptInput = document.getElementById('id_receipt');
+    if (receiptInput) {
+        receiptInput.addEventListener('change', function() {
+            const previewContainer = document.getElementById('receipt-preview');
+            
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `
+                        <div class="mt-3">
+                            <p class="mb-2">Receipt Preview:</p>
+                            <img src="${e.target.result}" class="img-fluid receipt-image" alt="Receipt preview">
+                        </div>
+                    `;
+                };
+                
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

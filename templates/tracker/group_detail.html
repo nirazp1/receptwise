@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ group.name }} - Splitwise Clone{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Group Info and Expenses -->
+    <div class="col-md-8">
+        <!-- Group Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="card-title mb-1">{{ group.name }}</h2>
+                        <p class="text-muted mb-0">{{ group.description }}</p>
+                    </div>
+                    <a href="{% url 'tracker:expense_create' group.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Expense
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses List -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Expenses</h5>
+            </div>
+            <div class="card-body">
+                {% if expenses %}
+                    {% for expense in expenses %}
+                    <div class="card mb-3 expense-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title mb-1">
+                                        <a href="{% url 'tracker:expense_detail' expense.id %}" class="text-decoration-none">
+                                            {{ expense.title }}
+                                        </a>
+                                    </h6>
+                                    <p class="card-text text-muted small mb-0">
+                                        {{ expense.date|date:"M d, Y" }} • Paid by {{ expense.paid_by.username }}
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                                    <h6 class="mb-0">${{ expense.amount }}</h6>
+                                    <small class="text-muted">{{ expense.split_type|title }} split</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center my-4">No expenses yet. Add your first expense!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Balances -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Balances</h5>
+            </div>
+            <div class="card-body">
+                {% if balances %}
+                    {% for member, balance in balances.items %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-0">{{ member.username }}</h6>
+                            <small class="text-muted">
+                                {% if member == request.user %}
+                                    You
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-0 {% if balance > 0 %}balance-positive{% elif balance < 0 %}balance-negative{% endif %}">
+                                ${{ balance|floatformat:2 }}
+                            </h6>
+                            <small class="text-muted">
+                                {% if balance > 0 %}
+                                    is owed
+                                {% elif balance < 0 %}
+                                    owes
+                                {% else %}
+                                    settled up
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center my-4">No balances to show.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Members List -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Members</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for member in members %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            {{ member.username }}
+                            {% if member == request.user %}
+                            <span class="badge bg-primary ms-2">You</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">
+                            {% if member.groupmember_set.first.role == 'admin' %}
+                            <i class="fas fa-crown text-warning me-1"></i>Admin
+                            {% else %}
+                            <i class="fas fa-user me-1"></i>Member
+                            {% endif %}
+                        </small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Settlement Button -->
+        {% if balances %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="d-grid">
+                    <a href="{% url 'tracker:settlement_create' group.id %}" class="btn btn-success">
+                        <i class="fas fa-money-bill-wave me-2"></i>Request Settlement
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

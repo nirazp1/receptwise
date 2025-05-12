@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load tracker_extras %}
+
+{% block title %}Groups - SplitTracker{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-section" data-aos="fade-up">
+    <div class="row">
+        <div class="col-lg-8">
+            <h2>Your Groups</h2>
+            <p>Manage your expense sharing groups and see who owes what</p>
+        </div>
+        <div class="col-lg-4 text-end d-flex justify-content-end align-items-center">
+            <a href="{% url 'tracker:group_create' %}" class="btn btn-light">
+                <i class="fas fa-plus me-2"></i>Create New Group
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for group in groups %}
+    <div class="col" data-aos="fade-up" data-aos-delay="{{ forloop.counter|multiply:100 }}">
+        <div class="card h-100 border-0 shadow-sm group-card">
+            <div class="position-relative">
+                {% if group.cover_photo %}
+                <img src="{{ group.cover_photo.url }}" class="card-img-top group-card-img" alt="{{ group.name }}">
+                {% else %}
+                <div class="card-img-top group-card-img d-flex align-items-center justify-content-center" 
+                    style="background: linear-gradient(135deg, 
+                    {% cycle '#4f46e5, #4338ca' '#10b981, #059669' '#3b82f6, #2563eb' '#f59e0b, #d97706' '#ef4444, #dc2626' %});">
+                    <i class="fas fa-users fa-3x text-white"></i>
+                </div>
+                {% endif %}
+                <div class="group-card-overlay"></div>
+                <div class="position-absolute top-0 end-0 p-3">
+                    <span class="badge bg-light text-dark shadow-sm">
+                        <i class="fas fa-user me-1"></i>{{ group.members.count }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body group-card-content">
+                <h5 class="card-title group-card-title">{{ group.name }}</h5>
+                <p class="card-text text-muted small">
+                    {% if group.description %}
+                        {{ group.description|truncatewords:15 }}
+                    {% else %}
+                        No description available.
+                    {% endif %}
+                </p>
+                <div class="d-flex justify-content-between align-items-center small text-muted mb-3">
+                    <span>
+                        <i class="fas fa-calendar-alt me-1"></i>{{ group.created_at|date:"M d, Y" }}
+                    </span>
+                    {% with balance=balances|get_item:group %}
+                    {% if balance %}
+                    <span class="{% if balance > 0 %}balance-positive{% elif balance < 0 %}balance-negative{% endif %}">
+                        <i class="fas {% if balance > 0 %}fa-arrow-up{% elif balance < 0 %}fa-arrow-down{% endif %} me-1"></i>
+                        ${{ balance|floatformat:2 }}
+                    </span>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="avatar-group">
+                        {% for member in group.members.all|slice:":3" %}
+                            <div class="avatar avatar-sm" style="background-color: 
+                                {% cycle '#eef2ff' '#ecfdf5' '#eff6ff' %}; 
+                                color: 
+                                {% cycle '#4f46e5' '#10b981' '#3b82f6' %};">
+                                {{ member.username.0|upper }}
+                            </div>
+                        {% endfor %}
+                        
+                        {% if group.members.count > 3 %}
+                            <div class="avatar avatar-sm" style="background-color: var(--gray-200); color: var(--gray-700);">
+                                +{{ group.members.count|add:"-3" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'tracker:group_detail' group.id %}" class="btn btn-primary">
+                        <i class="fas fa-eye me-2"></i>View Details
+                    </a>
+                    <a href="{% url 'tracker:expense_create' group.id %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus me-2"></i>Add Expense
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center py-5 card shadow-lg p-5 glass-card" data-aos="fade-up">
+            <i class="fas fa-users fa-4x text-primary mb-4" style="opacity: 0.7;"></i>
+            <h3>No Groups Yet</h3>
+            <p class="text-muted mb-4">Create a group to start sharing expenses with friends, family, or roommates.</p>
+            <div>
+                <a href="{% url 'tracker:group_create' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Create Your First Group
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if groups|length > 6 %}
+<div class="text-center mt-4" data-aos="fade-up">
+    <a href="#" class="btn btn-outline-primary">
+        <i class="fas fa-sync me-2"></i>Load More Groups
+    </a>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+// Add CSS for avatar groups
+document.addEventListener('DOMContentLoaded', function() {
+    // Create style for avatar groups if not exists
+    if (!document.getElementById('avatar-group-style')) {
+        const style = document.createElement('style');
+        style.id = 'avatar-group-style';
+        style.innerHTML = `
+            .avatar-group {
+                display: flex;
+                flex-direction: row;
+            }
+            .avatar-group .avatar {
+                margin-right: -8px;
+                border: 2px solid white;
+                transition: transform 0.2s ease;
+            }
+            .avatar-group .avatar:hover {
+                transform: translateY(-5px);
+                z-index: 10;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 

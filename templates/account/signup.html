@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign Up | SplitTracker{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7 col-sm-10">
+      <div class="card glass-card shadow-lg" data-aos="fade-up">
+        <div class="card-body p-4">
+          <div class="text-center mb-4">
+            <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+            <h2 class="fw-bold text-primary">Create Account</h2>
+            <p class="text-muted">Join SplitTracker to simplify expense sharing</p>
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Sign Up
+              </button>
+            </div>
+            
+            {% if redirect_field_value %}
+              <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% endif %}
+          </form>
+          
+          <div class="mt-4 text-center">
+            <div class="d-flex justify-content-center align-items-center mb-3">
+              <hr class="flex-grow-1">
+              <span class="mx-3 text-muted">OR</span>
+              <hr class="flex-grow-1">
+            </div>
+            
+            <p class="mb-1">Already have an account?</p>
+            <a href="{% url 'account_login' %}" class="btn btn-outline-primary">
+              <i class="fas fa-sign-in-alt me-2"></i>Sign In
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card mt-4 border-0 bg-transparent" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body">
+          <h5 class="text-center mb-3">Why Choose SplitTracker?</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="avatar avatar-sm me-2" style="background-color: var(--primary-light);">
+                      <i class="fas fa-calculator"></i>
+                    </div>
+                    <h6 class="mb-0">Easy Splitting</h6>
+                  </div>
+                  <p class="small text-muted mb-0">Split bills equally or with custom amounts</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="avatar avatar-sm me-2" style="background-color: var(--secondary-light);">
+                      <i class="fas fa-users"></i>
+                    </div>
+                    <h6 class="mb-0">Group Management</h6>
+                  </div>
+                  <p class="small text-muted mb-0">Create groups for different occasions</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="avatar avatar-sm me-2" style="background-color: var(--primary-light);">
+                      <i class="fas fa-bell"></i>
+                    </div>
+                    <h6 class="mb-0">Notifications</h6>
+                  </div>
+                  <p class="small text-muted mb-0">Get alerts for new expenses and settlements</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="avatar avatar-sm me-2" style="background-color: var(--secondary-light);">
+                      <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h6 class="mb-0">Balance Tracking</h6>
+                  </div>
+                  <p class="small text-muted mb-0">Know who owes what at all times</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

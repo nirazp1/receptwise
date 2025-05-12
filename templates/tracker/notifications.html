@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Notifications - Splitwise Clone{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Notifications</h5>
+        {% if notifications %}
+        <button class="btn btn-outline-primary btn-sm" id="markAllRead">
+            <i class="fas fa-check-double me-2"></i>Mark All as Read
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if notifications %}
+            {% for notification in notifications %}
+            <div class="notification-item d-flex align-items-start p-3 {% if not notification.is_read %}bg-light{% endif %}" 
+                 data-notification-id="{{ notification.id }}">
+                <div class="flex-shrink-0">
+                    {% if notification.type == 'expense_added' %}
+                        <i class="fas fa-receipt fa-2x text-primary"></i>
+                    {% elif notification.type == 'expense_updated' %}
+                        <i class="fas fa-edit fa-2x text-warning"></i>
+                    {% elif notification.type == 'settlement_request' %}
+                        <i class="fas fa-money-bill-wave fa-2x text-success"></i>
+                    {% elif notification.type == 'settlement_completed' %}
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    {% elif notification.type == 'group_invite' %}
+                        <i class="fas fa-user-plus fa-2x text-info"></i>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-1">{{ notification.content }}</h6>
+                        <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    <div class="mt-2">
+                        {% if notification.related_expense %}
+                        <a href="{% url 'tracker:expense_detail' notification.related_expense.id %}" class="btn btn-sm btn-outline-primary">
+                            View Expense
+                        </a>
+                        {% endif %}
+                        {% if notification.related_settlement %}
+                        <a href="{% url 'tracker:group_detail' notification.related_settlement.group.id %}" class="btn btn-sm btn-outline-success">
+                            View Settlement
+                        </a>
+                        {% endif %}
+                        {% if notification.related_group %}
+                        <a href="{% url 'tracker:group_detail' notification.related_group.id %}" class="btn btn-sm btn-outline-info">
+                            View Group
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if not notification.is_read %}
+                <div class="flex-shrink-0 ms-3">
+                    <button class="btn btn-sm btn-outline-secondary mark-read" data-notification-id="{{ notification.id }}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% if not forloop.last %}<hr class="my-0">{% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-bell fa-4x text-muted mb-3"></i>
+                <h4>No Notifications</h4>
+                <p class="text-muted">You're all caught up!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark single notification as read
+    document.querySelectorAll('.mark-read').forEach(button => {
+        button.addEventListener('click', function() {
+            const notificationId = this.dataset.notificationId;
+            markAsRead(notificationId);
+        });
+    });
+
+    // Mark all notifications as read
+    const markAllReadButton = document.getElementById('markAllRead');
+    if (markAllReadButton) {
+        markAllReadButton.addEventListener('click', function() {
+            const notificationIds = Array.from(document.querySelectorAll('.notification-item'))
+                .map(item => item.dataset.notificationId);
+            markAllAsRead(notificationIds);
+        });
+    }
+
+    function markAsRead(notificationId) {
+        fetch('{% url "tracker:notifications" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `notification_id=${notificationId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                notificationItem.classList.remove('bg-light');
+                const markReadButton = notificationItem.querySelector('.mark-read');
+                if (markReadButton) {
+                    markReadButton.remove();
+                }
+                updateUnreadCount();
+            }
+        });
+    }
+
+    function markAllAsRead(notificationIds) {
+        Promise.all(notificationIds.map(id => markAsRead(id)))
+            .then(() => {
+                const markAllReadButton = document.getElementById('markAllRead');
+                if (markAllReadButton) {
+                    markAllReadButton.remove();
+                }
+            });
+    }
+
+    function updateUnreadCount() {
+        const unreadCount = document.querySelectorAll('.notification-item.bg-light').length;
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+            } else {
+                badge.remove();
+            }
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

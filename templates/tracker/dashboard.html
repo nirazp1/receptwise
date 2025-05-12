@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Dashboard - SplitTracker{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-section" data-aos="fade-up">
+    <div class="row">
+        <div class="col-lg-8">
+            <h2>Welcome, {{ user.username }}</h2>
+            <p>Here's what's happening with your expenses and settlements</p>
+        </div>
+        <div class="col-lg-4 text-end d-flex justify-content-end align-items-center">
+            {% if user_groups %}
+            <a href="{% url 'tracker:expense_create' user_groups.0.id %}" class="btn btn-light">
+                <i class="fas fa-plus me-2"></i>Add Expense
+            </a>
+            {% else %}
+            <a href="{% url 'tracker:group_create' %}" class="btn btn-light">
+                <i class="fas fa-users me-2"></i>Create Group
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row mb-4">
+    <!-- Total Balance Card -->
+    {% with total_balance=0 %}
+        {% for group, balance in balances.items %}
+            {% with total_balance=total_balance|add:balance %}
+            {% endwith %}
+        {% endfor %}
+    
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 stat-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3" style="background-color: var(--primary-light); color: var(--primary-color);">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div>
+                            <div class="stat-title">TOTAL BALANCE</div>
+                            <div class="stat-value {% if total_balance > 0 %}balance-positive{% elif total_balance < 0 %}balance-negative{% endif %}">
+                                ${{ total_balance|floatformat:2 }}
+                            </div>
+                            <div class="small text-muted">
+                                {% if total_balance > 0 %}
+                                    You are owed money
+                                {% elif total_balance < 0 %}
+                                    You owe money
+                                {% else %}
+                                    All settled up
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+
+    <!-- Groups Count Card -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 stat-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background-color: var(--secondary-light); color: var(--secondary-color);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="stat-title">YOUR GROUPS</div>
+                        <div class="stat-value">{{ user_groups|length }}</div>
+                        <div class="small text-muted">
+                            {% if user_groups %}
+                            Active expense sharing groups
+                            {% else %}
+                            No groups yet
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Card -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 stat-card" data-aos="fade-up" data-aos-delay="300">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background-color: var(--warning-color); color: white;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div>
+                        <div class="stat-title">RECENT ACTIVITY</div>
+                        <div class="stat-value">{{ recent_expenses|length }}</div>
+                        <div class="small text-muted">
+                            {% if recent_expenses %}
+                            Expenses in last 30 days
+                            {% else %}
+                            No recent expenses
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Expenses -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100" data-aos="fade-up" data-aos-delay="400">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2 text-primary"></i>Recent Expenses
+                </h5>
+                <a href="{% url 'tracker:group_list' %}" class="btn btn-sm btn-outline-primary">View All Groups</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_expenses %}
+                    <div class="list-group list-group-flush">
+                    {% for expense in recent_expenses %}
+                        <a href="{% url 'tracker:expense_detail' expense.id %}" class="list-group-item list-group-item-action expense-card">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm me-3" style="background-color: 
+                                            {% cycle '#eef2ff' '#ecfdf5' '#fef2f2' '#fffbeb' '#eff6ff' %}; 
+                                            color: 
+                                            {% cycle '#4f46e5' '#10b981' '#ef4444' '#f59e0b' '#3b82f6' %};">
+                                            <i class="fas 
+                                                {% cycle 'fa-utensils' 'fa-taxi' 'fa-shopping-cart' 'fa-house' 'fa-gas-pump' %}">
+                                            </i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ expense.title }}</h6>
+                                            <div class="text-muted small">
+                                                <span class="me-2"><i class="fas fa-users me-1"></i>{{ expense.group.name }}</span>
+                                                <span><i class="fas fa-calendar-alt me-1"></i>{{ expense.date|date:"M d, Y" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <h6 class="mb-0 fw-bold">${{ expense.amount }}</h6>
+                                    <small class="text-muted d-flex align-items-center justify-content-end">
+                                        <i class="fas fa-user me-1"></i>{{ expense.paid_by.username }}
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <h5>No Recent Expenses</h5>
+                        <p class="text-muted">Your expense history will appear here</p>
+                        {% if user_groups %}
+                        <a href="{% url 'tracker:expense_create' user_groups.0.id %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add First Expense
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Balances -->
+    <div class="col-lg-4">
+        <div class="card mb-4" data-aos="fade-up" data-aos-delay="500">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-balance-scale me-2 text-success"></i>Group Balances
+                </h5>
+                {% if user_groups %}
+                <a href="{% url 'tracker:group_list' %}" class="btn btn-sm btn-outline-primary">All Groups</a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if balances %}
+                    <div class="list-group list-group-flush">
+                    {% for group, balance in balances.items %}
+                        <a href="{% url 'tracker:group_detail' group.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">{{ group.name }}</h6>
+                                    <small class="text-muted">{{ group.members.count }} members</small>
+                                </div>
+                                <div class="text-end">
+                                    <h6 class="mb-0 {% if balance > 0 %}balance-positive{% elif balance < 0 %}balance-negative{% endif %}">
+                                        ${{ balance|floatformat:2 }}
+                                    </h6>
+                                    <small class="text-muted">
+                                        {% if balance > 0 %}
+                                            You are owed
+                                        {% elif balance < 0 %}
+                                            You owe
+                                        {% else %}
+                                            Settled up
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5>No Groups Yet</h5>
+                        <p class="text-muted">Join or create groups to start tracking expenses</p>
+                        <a href="{% url 'tracker:group_create' %}" class="btn btn-primary">
+                            <i class="fas fa-users me-2"></i>Create Group
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card glass-card" data-aos="fade-up" data-aos-delay="600">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if user_groups %}
+                    <a href="{% url 'tracker:expense_create' user_groups.0.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add New Expense
+                    </a>
+                    <a href="{% url 'tracker:group_create' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-users me-2"></i>Create New Group
+                    </a>
+                    {% else %}
+                    <a href="{% url 'tracker:group_create' %}" class="btn btn-primary">
+                        <i class="fas fa-users me-2"></i>Create First Group
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

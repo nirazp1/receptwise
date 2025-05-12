@@ -1,0 +1,93 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h2 class="mb-0">Financial Summary</h2>
+  </div>
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card text-bg-success mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Total Income</h5>
+            <p class="card-text fs-4">${{ income|floatformat:2 }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-bg-danger mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Total Expenses</h5>
+            <p class="card-text fs-4">${{ expenses|floatformat:2 }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-bg-primary mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Current Balance</h5>
+            <p class="card-text fs-4">${{ balance|floatformat:2 }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h4>Expenses by Category</h4>
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-bordered table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Category</th>
+              <th>Total Spent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in category_summary %}
+            <tr>
+              <td>{{ row.category }}</td>
+              <td>${{ row.total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-center">No expenses found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <canvas id="expensesChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <a href="/" class="btn btn-secondary">Back to Home</a>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('expensesChart').getContext('2d');
+  const data = {
+    labels: [{% for row in category_summary %}'{{ row.category }}',{% endfor %}],
+    datasets: [{
+      data: [{% for row in category_summary %}{{ row.total }},{% endfor %}],
+      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+    }]
+  };
+  new Chart(ctx, {
+    type: 'pie',
+    data: data,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: 'Expenses by Category'
+        }
+      }
+    }
+  });
+</script>
+{% endblock %} 

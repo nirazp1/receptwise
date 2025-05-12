@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Create Group - SplitTracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Create New Group</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <!-- Cover Photo Preview -->
+                    <div id="cover-preview"></div>
+                    
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Group
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cover photo preview
+    const coverInput = document.getElementById('id_cover_photo');
+    if (coverInput) {
+        coverInput.addEventListener('change', function() {
+            const previewContainer = document.getElementById('cover-preview');
+            
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `
+                        <div class="mt-3">
+                            <p class="mb-2">Cover Photo Preview:</p>
+                            <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 200px; width: 100%; object-fit: cover;" alt="Cover preview">
+                        </div>
+                    `;
+                };
+                
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

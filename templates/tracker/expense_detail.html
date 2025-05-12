@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ expense.title }} - Splitwise Clone{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Expense Details -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="card-title mb-1">{{ expense.title }}</h2>
+                        <p class="text-muted mb-0">
+                            {{ expense.date|date:"M d, Y" }} • {{ expense.group.name }}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <h3 class="mb-0">${{ expense.amount }}</h3>
+                        <small class="text-muted">{{ expense.split_type|title }} split</small>
+                    </div>
+                </div>
+                {% if expense.description %}
+                <hr>
+                <p class="card-text">{{ expense.description }}</p>
+                {% endif %}
+                {% if expense.receipt %}
+                <hr>
+                <div class="text-center">
+                    <img src="{{ expense.receipt.url }}" alt="Receipt" class="img-fluid rounded" style="max-height: 400px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Comments</h5>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                    {% for comment in comments %}
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-circle fa-2x text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">{{ comment.user.username }}</h6>
+                                <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            <p class="mb-0">{{ comment.text }}</p>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center my-4">No comments yet. Be the first to comment!</p>
+                {% endif %}
+
+                <!-- Comment Form -->
+                <hr>
+                <form method="post" class="mt-3">
+                    {% csrf_token %}
+                    {{ comment_form|crispy }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Shares -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Split Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">Paid by</h6>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ expense.paid_by.username }}</h6>
+                            <small class="text-muted">Paid ${{ expense.amount }}</small>
+                        </div>
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="text-muted mb-3">Split between</h6>
+                {% for share in shares %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="mb-0">{{ share.user.username }}</h6>
+                        <small class="text-muted">
+                            {% if expense.split_type == 'percent' %}
+                                {{ share.percentage }}%
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <h6 class="mb-0">${{ share.amount }}</h6>
+                        {% if share.user == expense.paid_by %}
+                        <small class="text-muted">paid</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if not forloop.last %}<hr>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'tracker:group_detail' expense.group.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Group
+                    </a>
+                    {% if expense.paid_by == request.user %}
+                    <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteExpenseModal">
+                        <i class="fas fa-trash me-2"></i>Delete Expense
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Expense Modal -->
+{% if expense.paid_by == request.user %}
+<div class="modal fade" id="deleteExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'tracker:expense_delete' expense.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 
